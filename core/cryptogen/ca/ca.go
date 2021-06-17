@@ -7,11 +7,10 @@ package ca
 
 import (
 	"crypto"
-	"crypto/ecdsa"
+	//"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/sha256"
-	"crypto/x509"
+	//"crypto/sha256"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"io/ioutil"
@@ -22,8 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhj0811/fabric-tools/core/cryptogen/csp"
+	ecdsa "github.com/Hyperledger-TWGC/tjfoc-gm/sm2"
+	sha256 "github.com/Hyperledger-TWGC/tjfoc-gm/sm3"
+	"github.com/Hyperledger-TWGC/tjfoc-gm/x509"
+
 	"github.com/pkg/errors"
+	"github.com/zhj0811/fabric-tools/core/cryptogen/csp"
 )
 
 type CA struct {
@@ -173,7 +176,7 @@ func computeSKI(privKey *ecdsa.PrivateKey) []byte {
 	raw := elliptic.Marshal(privKey.Curve, privKey.PublicKey.X, privKey.PublicKey.Y)
 
 	// Hash it
-	hash := sha256.Sum256(raw)
+	hash := sha256.Sm3Sum(raw)
 	return hash[:]
 }
 
@@ -248,11 +251,12 @@ func genCertificateECDSA(
 	template,
 	parent *x509.Certificate,
 	pub *ecdsa.PublicKey,
-	priv interface{},
+	priv crypto.Signer,
 ) (*x509.Certificate, error) {
 
 	//create the x509 public cert
-	certBytes, err := x509.CreateCertificate(rand.Reader, template, parent, pub, priv)
+	//certBytes, err := x509.CreateCertificate(rand.Reader, template, parent, pub, priv)
+	certBytes, err := x509.CreateCertificate(template, parent, pub, priv)
 	if err != nil {
 		return nil, err
 	}

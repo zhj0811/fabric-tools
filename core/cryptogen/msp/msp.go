@@ -6,15 +6,16 @@ SPDX-License-Identifier: Apache-2.0
 package msp
 
 import (
-	"crypto/x509"
 	"encoding/pem"
 	"os"
 	"path/filepath"
 
-	"github.com/zhj0811/fabric-tools/core/cryptogen/ca"
-	"github.com/zhj0811/fabric-tools/core/cryptogen/csp"
+	"github.com/Hyperledger-TWGC/tjfoc-gm/x509"
+
 	fabricmsp "github.com/hyperledger/fabric/msp"
 	"github.com/pkg/errors"
+	"github.com/zhj0811/fabric-tools/core/cryptogen/ca"
+	"github.com/zhj0811/fabric-tools/core/cryptogen/csp"
 	"gopkg.in/yaml.v2"
 )
 

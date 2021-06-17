@@ -7,12 +7,11 @@ package csp
 
 import (
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
+	//"crypto/ecdsa"
+	//"crypto/elliptic"
 	"crypto/rand"
-	"crypto/x509"
+	//"crypto/x509"
 	"encoding/asn1"
-	"encoding/pem"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -20,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	ecdsa "github.com/Hyperledger-TWGC/tjfoc-gm/sm2"
+	"github.com/Hyperledger-TWGC/tjfoc-gm/x509"
 	"github.com/pkg/errors"
 )
 
@@ -39,7 +40,7 @@ func LoadPrivateKey(keystorePath string) (*ecdsa.PrivateKey, error) {
 			return err
 		}
 
-		priv, err = parsePrivateKeyPEM(rawKey)
+		priv, err = x509.ReadPrivateKeyFromPem(rawKey, nil)
 		if err != nil {
 			return errors.WithMessage(err, path)
 		}
@@ -55,39 +56,37 @@ func LoadPrivateKey(keystorePath string) (*ecdsa.PrivateKey, error) {
 	return priv, err
 }
 
-func parsePrivateKeyPEM(rawKey []byte) (*ecdsa.PrivateKey, error) {
-	block, _ := pem.Decode(rawKey)
-	if block == nil {
-		return nil, errors.New("bytes are not PEM encoded")
-	}
-
-	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, errors.WithMessage(err, "pem bytes are not PKCS8 encoded ")
-	}
-
-	priv, ok := key.(*ecdsa.PrivateKey)
-	if !ok {
-		return nil, errors.New("pem bytes do not contain an EC private key")
-	}
-	return priv, nil
-}
+//func parsePrivateKeyPEM(rawKey []byte) (*ecdsa.PrivateKey, error) {
+//	block, _ := pem.Decode(rawKey)
+//	if block == nil {
+//		return nil, errors.New("bytes are not PEM encoded")
+//	}
+//
+//	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+//	if err != nil {
+//		return nil, errors.WithMessage(err, "pem bytes are not PKCS8 encoded ")
+//	}
+//
+//	priv, ok := key.(*ecdsa.PrivateKey)
+//	if !ok {
+//		return nil, errors.New("pem bytes do not contain an EC private key")
+//	}
+//	return priv, nil
+//}
 
 // GeneratePrivateKey creates an EC private key using a P-256 curve and stores
 // it in keystorePath.
 func GeneratePrivateKey(keystorePath string) (*ecdsa.PrivateKey, error) {
 
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	priv, err := ecdsa.GenerateKey(rand.Reader)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to generate private key")
 	}
 
-	pkcs8Encoded, err := x509.MarshalPKCS8PrivateKey(priv)
+	pemEncoded, err := x509.WritePrivateKeyToPem(priv, nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to marshal private key")
 	}
-
-	pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: pkcs8Encoded})
 
 	keyFile := filepath.Join(keystorePath, "priv_sk")
 	err = ioutil.WriteFile(keyFile, pemEncoded, 0600)
@@ -116,7 +115,8 @@ func (e *ECDSASigner) Public() crypto.PublicKey {
 
 // Sign signs the digest and ensures that signatures use the Low S value.
 func (e *ECDSASigner) Sign(rand io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
-	r, s, err := ecdsa.Sign(rand, e.PrivateKey, digest)
+	//r, s, err := ecdsa.Sign(rand, e.PrivateKey, digest)
+	r, s, err := ecdsa.Sm2Sign(e.PrivateKey, digest, nil, rand)
 	if err != nil {
 		return nil, err
 	}
